@@ -6,17 +6,20 @@ public class Node {
 
     // Node Globals
     private static final int MAX_STEPS = 32; // # requests a single lookup can generate
-    private static final int NUM_SUCCESSORS = 3;
-    private static final int M = 7;
+    private static final int NUM_SUCCESSORS = 1;
+    private static final int M = 7; //size of fingertable
 
     // Node ID
     private int nodeID; // stored as int for comparison
     // Node Finger Table
     private ArrayList<Node> fingerTable;
     // Node Successors
+    //private ArrayList<Node> successors; // stores 3 next successors
     private ArrayList<Node> successors; // stores 3 next successors
     // Node Predecessor
     private Node predecessor;
+    private String ip_address;
+    private String port;
 
     private boolean successorFound; // used for lookup
 
@@ -24,6 +27,8 @@ public class Node {
     public Node(String ip_address, String port, int bits) {
 
         this.nodeID = Key.generate(ip_address + ":" + port, bits); // Do SHA-1 of IP Address and Port
+        this.ip_address = ip_address;
+        this.port = port;
         this.fingerTable = new ArrayList<>(M);
         this.successors = new ArrayList<>(NUM_SUCCESSORS);
         /*
@@ -39,6 +44,18 @@ public class Node {
     public int getNodeID() {
         return nodeID;
     }
+    public void setIpAddress(String address) {
+    	this.ip_address = address;
+    }
+    public String getIpAddress() {
+    	return this.ip_address;
+    }
+    public void setPort(String port) {
+    	this.port = port;
+    }
+    public String getPort() {
+    	return this.port;
+    }
     public void setFingerTable(ArrayList<Node> fingerTable) {
         this.fingerTable = fingerTable;
     }
@@ -49,7 +66,7 @@ public class Node {
     	this.successors = successors;
     }
     public ArrayList<Node> getSuccessors(){
-    	return this.successors;
+    	return this.fingerTable;
     }
     public void setPredecessor(Node predecessor){
     	this.predecessor = predecessor;
@@ -67,9 +84,20 @@ public class Node {
     // Add new Node to Finger Table
     public void addToFingerTable(String ip_address, String port, int bits) {
     	Node newnode = new Node(ip_address, port, bits);
-    	this.getFingerTable().add(newnode);
+    	
+    	if(this.fingerTable.size() < M) {
+    		this.getFingerTable().add(newnode);
+    	}
     }
-
+    
+   public void populateFingerTable() {
+	   //If node is the only node in the ring
+	   
+	   //If the node has 1 other node in the ring
+	   
+	   //If the node has n other nodes in the ring
+   }
+    
     /*
      Adding node lookup function:
      Following 4 functions are involved in finding the the node that holds the desired key.
@@ -81,12 +109,14 @@ public class Node {
         // check if key is stored locally
         if (key == nextNode.getNodeID()){
             nextNode.setSuccessorFound(true);
+            System.out.println("Set Successor Found = True");
         }
     	int i = 0;
     	while ((!nextNode.getSuccessorFound()) && (i < MAX_STEPS)) {
             nextNode = nextNode.findSuccessor(key);
             i++;
     	}
+        
     	if (nextNode.getSuccessorFound()) {
             nextNode.setSuccessorFound(false); // return value to false for future lookups
             return nextNode;
