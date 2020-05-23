@@ -1,9 +1,14 @@
 package com.coen317.node;
 
+
+import java.util.ArrayList;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+
+
 public class NodeApplication {
 
 	public static void main(String[] args) {
@@ -45,13 +50,32 @@ public class NodeApplication {
         System.out.println("Introducer successor: "   + ring.getIntroducer().getSuccessor().getNodeID());
         System.out.println("Introducer predecessor: " + ring.getIntroducer().getPredecessor().getNodeID());
         
-     // create a 5th new node 
+        // create a 5th new node 
         Node N112 = new Node("20.809.80.143", "8080", 7);
         N112.setNodeID(112); // hardcoding nodeID
         ring.join(N112);
         System.out.println("** N112 added to the ring");
         System.out.println("Introducer successor: "   + ring.getIntroducer().getSuccessor().getNodeID());
         System.out.println("Introducer predecessor: " + ring.getIntroducer().getPredecessor().getNodeID());
+        
+        // Setup Fingertable for N32
+        ArrayList<Node> fingerTable = new ArrayList<Node>();
+        fingerTable.add(N40);
+        fingerTable.add(N40);
+        fingerTable.add(N40);
+        fingerTable.add(N40);
+        fingerTable.add(N112);
+        N32.setFingerTable(fingerTable);
+        
+        N32.printFingerTable();
+        
+       //Find Test Key = 60
+        Node findTest01 = N32.find(60);
+        System.out.println("Find Test Node(112): " + findTest01.getNodeID());
+        
+        //Find Test Key = 60
+        Node findTest02 = N32.find(120);
+        System.out.println("Find Test Node(16): " + findTest02.getNodeID());
 	}
 
 }

@@ -15,11 +15,12 @@ public class NodeController {
 	
 	InputData node01 = new InputData();
 	Node thisnode;
+	DHT ring;
 	
 	@GetMapping("/initialize")
 	public String initialize() {
 		
-		int bits = 20;
+		int bits = 7;
 		String portnum = "8080";
 		String addr = null;
 		
@@ -31,8 +32,9 @@ public class NodeController {
 		}
 		
 		thisnode = new Node(addr, portnum, bits);
+		ring = new DHT(thisnode);
 		
-		return String.format("Node Initialized at %s:%s", addr, portnum);
+		return String.format("Node Initialized at %s:%s Node ID = %d", addr, portnum, thisnode.getNodeID());
 	}
 	
 	@GetMapping("/addtofingertable")
@@ -48,14 +50,13 @@ public class NodeController {
 	public ArrayList getfingertable() {
 		return thisnode.getFingerTable();
 	}
-	
 	@GetMapping("/inputdata")
 	public String inputdata(@RequestParam List<String> myparams) {
 		/*
 		 *  Browser Usage Example: http://localhost:8080/inputdata?myparams=3,this
 		 *  val = 3
 		 *  content = this
-		 * 
+		 *  
 		 */
 		
 		if(myparams.size() != 2) {
@@ -83,6 +84,16 @@ public class NodeController {
 		}
 		
 		return String.format("%s Retrieved ID: %d and Content: %s", addr, key, got_content);
+	}
+	
+	@GetMapping("/find")
+	public Node find(@RequestParam String findstring) {
+		int bits = 7;
+		int key = Key.generate(findstring, bits);
+		System.out.println(String.format("find key generated %s = %d", findstring, key));
+		Node foundnode = thisnode.find(key);
+		
+		return foundnode;
 	}
 	
 	public String getipAddress() throws UnknownHostException {
