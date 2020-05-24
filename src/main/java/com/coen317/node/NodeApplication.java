@@ -1,10 +1,16 @@
 package com.coen317.node;
 
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 
@@ -12,9 +18,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class NodeApplication {
 
 	public static void main(String[] args) {
-		//SpringApplication.run(NodeApplication.class, args);
+		SpringApplication.run(NodeApplication.class, args);
 		
-		chordTest();
+		//chordTest();
+		//callNode();
 	}
 	
 	public static void chordTest() {
@@ -29,7 +36,7 @@ public class NodeApplication {
         // create a 2nd new node 
         Node N45 = new Node("30.219.57.143", "8080", 7);
         N45.setNodeID(45); 	// hardcoding nodeID
-        ring.join(N45); 
+        ring.join(N45);
         System.out.println("** N45 added to the ring");
         System.out.println("Introducer successor: "   + ring.getIntroducer().getSuccessor().getNodeID());
         System.out.println("Introducer predecessor: " + ring.getIntroducer().getPredecessor().getNodeID());
@@ -77,5 +84,15 @@ public class NodeApplication {
         Node findTest02 = N32.find(120);
         System.out.println("Find Test Node(16): " + findTest02.getNodeID());
 	}
-
+	/*
+	@Bean
+	public static Node callNode(){
+		String nodeaddr = String.format("http://%s:%s", "18.237.116.195","8080");
+		System.out.println("getNode nodeaddr="+nodeaddr);
+		RestTemplate restTemplate = new RestTemplate();
+		Node node = restTemplate.getForObject(
+					nodeaddr+"/getSuccessor", Node.class);
+		return node;
+	}
+	*/
 }

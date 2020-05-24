@@ -5,15 +5,16 @@ import java.util.List;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 public class NodeController {
 	private static final String template = "Stored Content: %d %s";
 	
-	InputData node01 = new InputData();
 	Node thisnode;
 	DHT ring;
 	
@@ -37,6 +38,10 @@ public class NodeController {
 		return String.format("Node Initialized at %s:%s Node ID = %d", addr, portnum, thisnode.getNodeID());
 	}
 	
+	//if new ring, create DHT
+	
+	//if you want join a ring, query for ring object by passing the leader ip address
+	
 	@GetMapping("/addtofingertable")
 	public String addtofingertable(@RequestParam List<String> nodeparams) {
 		String mytemplate = "Stored to Finger Table: %s:%s";
@@ -50,40 +55,27 @@ public class NodeController {
 	public ArrayList getfingertable() {
 		return thisnode.getFingerTable();
 	}
-	@GetMapping("/inputdata")
-	public String inputdata(@RequestParam List<String> myparams) {
-		/*
-		 *  Browser Usage Example: http://localhost:8080/inputdata?myparams=3,this
-		 *  val = 3
-		 *  content = this
-		 *  
-		 */
-		
-		if(myparams.size() != 2) {
-			return "Error: Parameters not correct";
-		}
-		else {
-			long val = Long.parseLong(myparams.get(0));
-			String content = myparams.get(1);
-			node01.setData(val, content);
-			return String.format(template, val, content);
-		}
+	
+	@GetMapping("/setSuccessor")
+	public void setSuccessor(@RequestParam List<String> successornodeparam) {
+		Node successor = new Node(successornodeparam.get(0), successornodeparam.get(1), Integer.parseInt(successornodeparam.get(2)));
+		thisnode.setSuccessor(successor);
 	}
 	
-	@GetMapping("/getdata")
-	public String getdata(@RequestParam(value = "key") long key) {
-		String got_content = node01.getContent(key);
-		
-		String addr = null;
-		
-		try {
-			addr = getipAddress();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		return String.format("%s Retrieved ID: %d and Content: %s", addr, key, got_content);
+	@GetMapping("/getSuccessor")
+	public Node getSuccessor() {
+		return thisnode.getSuccessor();
+	}
+	
+	@GetMapping("/setPredecessor")
+	public void setPredecessor(@RequestParam List<String> predecessornodeparam) {
+		Node predecessor = new Node(predecessornodeparam.get(0), predecessornodeparam.get(1), Integer.parseInt(predecessornodeparam.get(2)));
+		thisnode.setPredecessor(predecessor);
+	}
+	
+	@GetMapping("/getPredecessor")
+	public Node getPredecessor() {
+		return thisnode.getPredecessor();
 	}
 	
 	@GetMapping("/find")
@@ -101,5 +93,15 @@ public class NodeController {
 		String addr = localhost.getHostAddress();
 		return addr;
 		
+	}
+	
+	@GetMapping("/getNode")
+	public Node callNode(@RequestParam List<String> nodeinfo){
+		String nodeaddr = String.format("http://%s:%s", nodeinfo.get(0), nodeinfo.get(1));
+		System.out.println("getNode nodeaddr="+nodeaddr);
+		RestTemplate restTemplate = new RestTemplate();
+		Node node = restTemplate.getForObject(
+					nodeaddr+"/getSuccessor", Node.class);
+		return node;
 	}
 }

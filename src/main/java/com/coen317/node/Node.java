@@ -2,6 +2,9 @@ package com.coen317.node;
 
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Node {
 	
     // Node Globals
