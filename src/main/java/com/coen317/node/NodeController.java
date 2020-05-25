@@ -5,6 +5,7 @@ import java.util.List;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -94,7 +95,7 @@ public class NodeController {
 		return addr;
 		
 	}
-	
+	/*
 	@GetMapping("/getNode")
 	public Node callNode(@RequestParam List<String> nodeinfo){
 		String nodeaddr = String.format("http://%s:%s", nodeinfo.get(0), nodeinfo.get(1));
@@ -104,4 +105,41 @@ public class NodeController {
 					nodeaddr+"/getSuccessor", Node.class);
 		return node;
 	}
+	
+	*/
+	@Bean
+	public RestTemplate restTemplate(RestTemplateBuilder builder) {
+		return builder.build();
+	}
+	
+	@GetMapping("/setSuccessorNodeSuccessor")
+	public String setSuccessorNodeSuccessor(@RequestParam List <String> nodeparam) {
+		String nodecmd = String.format("http://%s:%s/setSuccessor?successornodeparam=%s,%s,%s", thisnode.getSuccessor().getIpAddress(), thisnode.getSuccessor().getPort(),nodeparam.get(0),nodeparam.get(1), nodeparam.get(2));
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		return "Successful";
+	}
+	
+	@GetMapping("/getSuccessorNode")
+	public String getSuccessorNode() {
+		//"18.237.116.195", "8080"
+		String nodeaddr = String.format("http://%s:%s", thisnode.getSuccessor().getIpAddress(), thisnode.getSuccessor().getPort());
+		
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodeaddr+"/getSuccessor", String.class);
+		
+		return result;
+	}
+	
+	@GetMapping("/getPredecessorNode")
+	public String getPredecessorNode() {
+		//"18.237.116.195", "8080"
+		String nodeaddr = String.format("http://%s:%s", thisnode.getPredecessor().getIpAddress(), thisnode.getPredecessor().getPort());
+		
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodeaddr+"/getPredecessor", String.class);
+		
+		return result;
+	}
+
 }
