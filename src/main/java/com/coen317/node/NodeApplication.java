@@ -1,19 +1,23 @@
 package com.coen317.node;
 
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.coen317.node.property.FileStorageProperties;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
-
+@EnableConfigurationProperties({
+	FileStorageProperties.class
+})
 
 public class NodeApplication {
 
