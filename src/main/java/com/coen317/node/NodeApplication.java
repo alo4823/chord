@@ -25,7 +25,6 @@ public class NodeApplication {
 		SpringApplication.run(NodeApplication.class, args);
 		
 		//chordTest();
-		//callNode();
 	}
 	
 	public static void chordTest() {
@@ -88,15 +87,4 @@ public class NodeApplication {
         Node findTest02 = N32.find(120);
         System.out.println("Find Test Node(16): " + findTest02.getNodeID());
 	}
-	/*
-	@Bean
-	public static Node callNode(){
-		String nodeaddr = String.format("http://%s:%s", "18.237.116.195","8080");
-		System.out.println("getNode nodeaddr="+nodeaddr);
-		RestTemplate restTemplate = new RestTemplate();
-		Node node = restTemplate.getForObject(
-					nodeaddr+"/getSuccessor", Node.class);
-		return node;
-	}
-	*/
 }

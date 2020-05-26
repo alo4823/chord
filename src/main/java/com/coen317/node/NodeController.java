@@ -39,6 +39,17 @@ public class NodeController {
 		return String.format("Node Initialized at %s:%s Node ID = %d", addr, portnum, thisnode.getNodeID());
 	}
 	
+	@GetMapping("/getthisnodeinfo")
+	public Node getthisnodeinfo() {
+		return thisnode;
+	}
+	
+	@GetMapping("/setnodeid")
+	public String setnodeid(@RequestParam String nodeid) {
+		thisnode.setNodeID(Integer.parseInt(nodeid));
+		return "Node ID set to: " + nodeid;
+	}
+	
 	//if new ring, create DHT
 	
 	//if you want join a ring, query for ring object by passing the leader ip address
@@ -95,18 +106,7 @@ public class NodeController {
 		return addr;
 		
 	}
-	/*
-	@GetMapping("/getNode")
-	public Node callNode(@RequestParam List<String> nodeinfo){
-		String nodeaddr = String.format("http://%s:%s", nodeinfo.get(0), nodeinfo.get(1));
-		System.out.println("getNode nodeaddr="+nodeaddr);
-		RestTemplate restTemplate = new RestTemplate();
-		Node node = restTemplate.getForObject(
-					nodeaddr+"/getSuccessor", Node.class);
-		return node;
-	}
-	
-	*/
+
 	@Bean
 	public RestTemplate restTemplate(RestTemplateBuilder builder) {
 		return builder.build();
@@ -141,5 +141,15 @@ public class NodeController {
 		
 		return result;
 	}
-
+	
+	@GetMapping("/addtoring")
+	public String addToRing(@RequestParam List <String> nodeparam) {
+		Node newnode = new Node(nodeparam.get(0), nodeparam.get(1), Integer.parseInt(nodeparam.get(2)));
+		ring.join(newnode);
+		
+		// set successor and introducer
+		//thisnode.setSuccessor(ring.getIntroducer().getSuccessor());
+		
+		return String.format("%s with %s:%s has joined the ring", newnode.getNodeID(), newnode.getIpAddress(), newnode.getPort());
+	}
 }
