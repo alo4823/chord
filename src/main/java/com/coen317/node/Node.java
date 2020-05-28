@@ -26,7 +26,10 @@ public class Node {
     private boolean successorFound; // used for lookup
 	private Node successor;
     
-
+	//dummy constructor
+	public Node() {
+		
+	}
     public Node(String ip_address, String port, int bits) {        
     	
         this.nodeID = Key.generate(ip_address + ":" + port, bits); // Do SHA-1 of IP Address and Port
@@ -149,7 +152,7 @@ public class Node {
         // if key is between the current node and the node's immediate successor, return immediate successor
        if (isBetween(key, this.getNodeID(), this.getSuccessor().getNodeID())) {
             this.getSuccessor().setSuccessorFound(true);
-            return this.getSuccessor();
+            return this.getSuccessor(); //RPC
         }
         // else, continue search in node's fingerTable
         else {
@@ -161,21 +164,21 @@ public class Node {
     public Node findClosestPrecedingNode(int key) {
         // if fingerTable's not yet initialized (ie with joining), skip below for loop
         if (this.getFingerTable().isEmpty() || this.getFingerTable() == null){
-            return this.getSuccessor();
+            return this.getSuccessor(); //RPC
         }
         // iterate through node's fingerTable
         for (int i = M-1; i >= 0; i--) {
             // if finger node is between current node and requested key, return finger node
             if (this.getFingerTable().get(i).getNodeID() == key){
                 this.getFingerTable().get(i).setSuccessorFound(true);
-                return this.getFingerTable().get(i);
+                return this.getFingerTable().get(i); //RPC
             }
             else if (isBetween(this.getFingerTable().get(i).getNodeID(), this.getNodeID(), key)) {
-                return this.getFingerTable().get(i);
+                return this.getFingerTable().get(i); //RPC
             }   
         }
         // else, return node's successor
-        return this.getSuccessor();
+        return this.getSuccessor(); //RPC
     }
 
     // returns true if the key is between (start, end] range in the ring

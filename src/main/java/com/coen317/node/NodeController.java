@@ -1,16 +1,22 @@
 package com.coen317.node;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 public class NodeController {
@@ -113,43 +119,258 @@ public class NodeController {
 	}
 	
 	@GetMapping("/setSuccessorNodeSuccessor")
-	public String setSuccessorNodeSuccessor(@RequestParam List <String> nodeparam) {
+	public Node setSuccessorNodeSuccessor(@RequestParam List <String> nodeparam) throws JsonMappingException, JsonProcessingException {
 		String nodecmd = String.format("http://%s:%s/setSuccessor?successornodeparam=%s,%s,%s", thisnode.getSuccessor().getIpAddress(), thisnode.getSuccessor().getPort(),nodeparam.get(0),nodeparam.get(1), nodeparam.get(2));
 		RestTemplate restTemplate = new RestTemplate();
 		String result = restTemplate.getForObject(nodecmd, String.class);
-		return "Successful";
+		
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
+		
+	}
+	
+	@GetMapping("/setPredecessorNodePredecessor")
+	public Node setPredecessorNodePredecessor(@RequestParam List <String> nodeparam) throws JsonMappingException, JsonProcessingException {
+		String nodecmd = String.format("http://%s:%s/setPredecessor?predecessornodeparam=%s,%s,%s", thisnode.getPredecessor().getIpAddress(), thisnode.getPredecessor().getPort(),nodeparam.get(0),nodeparam.get(1), nodeparam.get(2));
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
+	}
+	
+	@GetMapping("setSuccessorNodePredecessor")
+	public Node setSuccessorNodePredecessor(@RequestParam List<String> nodeparam) throws JsonMappingException, JsonProcessingException {
+		String nodecmd = String.format("http://%s:%s/setPredecessor?predecessornodeparam=%s,%s,%s", thisnode.getSuccessor().getIpAddress(), thisnode.getSuccessor().getPort(),nodeparam.get(0),nodeparam.get(1), nodeparam.get(2));
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
+	}
+	
+	@GetMapping("setPredecessorNodeSuccessor")
+	public Node setPredecessorNodeSuccessor(@RequestParam List<String> nodeparam) throws JsonMappingException, JsonProcessingException {
+		String nodecmd = String.format("http://%s:%s/setSuccessor?successornodeparam=%s,%s,%s", thisnode.getPredecessor().getIpAddress(), thisnode.getPredecessor().getPort(),nodeparam.get(0),nodeparam.get(1), nodeparam.get(2));
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
 	}
 	
 	@GetMapping("/getSuccessorNode")
-	public String getSuccessorNode() {
+	public Node getSuccessorNode() throws JsonMappingException, JsonProcessingException {
 		//"18.237.116.195", "8080"
 		String nodeaddr = String.format("http://%s:%s", thisnode.getSuccessor().getIpAddress(), thisnode.getSuccessor().getPort());
 		
 		RestTemplate restTemplate = new RestTemplate();
 		String result = restTemplate.getForObject(nodeaddr+"/getSuccessor", String.class);
 		
-		return result;
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
 	}
 	
 	@GetMapping("/getPredecessorNode")
-	public String getPredecessorNode() {
+	public Node getPredecessorNode() throws JsonMappingException, JsonProcessingException {
 		//"18.237.116.195", "8080"
 		String nodeaddr = String.format("http://%s:%s", thisnode.getPredecessor().getIpAddress(), thisnode.getPredecessor().getPort());
 		
 		RestTemplate restTemplate = new RestTemplate();
 		String result = restTemplate.getForObject(nodeaddr+"/getPredecessor", String.class);
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
+	}
+	
+	@GetMapping("/getSuccessorNodePredecessor")
+	public Node getSuccessorNodePredecessor(@RequestParam List<String> nodeparam) throws JsonMappingException, JsonProcessingException {
+		
+		String nodecmd = String.format("http://%s:%s/getPredecessor", thisnode.getSuccessor().getIpAddress(), thisnode.getSuccessor().getPort());
+		
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
+	}
+	
+	@GetMapping("/addtoring")
+	public String addToRing(@RequestParam List <String> nodeparam) throws JsonMappingException, JsonProcessingException {
+		Node joiningNode = new Node(nodeparam.get(0), nodeparam.get(1), Integer.parseInt(nodeparam.get(2)));
+		join(joiningNode);
+
+		// set successor and thisnode
+		//thisnode.setSuccessor(ring.getthisnode().getSuccessor());
+		
+		return String.format("%s with %s:%s has joined the ring", joiningNode.getNodeID(), joiningNode.getIpAddress(), joiningNode.getPort());
+	}
+	
+	public void join(Node joiningNode) throws JsonMappingException, JsonProcessingException{
+		
+        // handle case where ring only has thisnode node: will become ring of 2 nodes
+        if (thisnode.getPredecessor() == null && thisnode.getSuccessor() == null) {
+            thisnode.setPredecessor(joiningNode);
+            thisnode.setSuccessor(joiningNode);
+            //joiningNode.setPredecessor(thisnode);
+            setNodeOnePredecessorToNodeTwo(joiningNode, thisnode);
+            //joiningNode.setSuccessor(thisnode);
+            setNodeOneSuccessorToNodeTwo(joiningNode, thisnode);
+            
+        }
+        else {
+            // set joiningNode's successor | to thisnodes find of joiningNode's ID
+            //joiningNode.setSuccessor(thisnode.find(joiningNode.getNodeID()));
+        	setNodeOneSuccessorToNodeTwo(joiningNode, find(thisnode, joiningNode.getNodeID()));
+            
+            // set joiningNode's predecessor | to joiningNode's Successor's Predecessor
+            //joiningNode.setPredecessor(joiningNode.getSuccessor().getPredecessor());
+            setNodeOnePredecessorToNodeTwo(joiningNode, getSuccessorPredecessorNode(joiningNode));
+            
+            
+            // update joiningNode's predecessor's successor | to joiningNode
+            //joiningNode.getPredecessor().setSuccessor(joiningNode);
+            setPredecessorSuccessor(joiningNode);
+            
+            // update joiningNode's successor's predecessor | to joiningNode
+            //joiningNode.getSuccessor().setPredecessor(joiningNode);
+            setSuccessorPredecessor(joiningNode);
+            
+            
+        }
+    }
+	
+	public void setNodeOnePredecessorToNodeTwo(Node one, Node two) {
+		String nodecmd = String.format("http://%s:%s/setPredecessor?predecessornodeparam=%s,%s,%s", one.getIpAddress(), one.getPort(), two.getIpAddress(), two.getPort(), "7");
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+	}
+	
+	public void setNodeOneSuccessorToNodeTwo(Node one, Node two) {
+		String nodecmd = String.format("http://%s:%s/setSuccessor?successornodeparam=%s,%s,%s", one.getIpAddress(), one.getPort(), two.getIpAddress(), two.getPort(), "7");
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+	}
+	
+	public void setSuccessorPredecessor(Node one) {
+		String nodecmd = String.format("http://%s:%s/setSuccessorNodePredecessor?nodeparam=%s,%s,%s", one.getIpAddress(), one.getPort(), one.getIpAddress(), one.getPort(), "7");
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+	}
+	
+	public void setPredecessorSuccessor(Node one) {
+		String nodecmd = String.format("http://%s:%s/setPredecessorNodeSuccessor?nodeparam=%s,%s,%s", one.getIpAddress(), one.getPort(), one.getIpAddress(), one.getPort(), "7");
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		
+	}
+	
+	public Node getSuccessorPredecessorNode(Node one) throws JsonMappingException, JsonProcessingException {
+		
+		String nodecmd = String.format("http://%s:%s/getSuccessorNodePredecessor", one.getIpAddress(), one.getPort());
+		
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
+	}
+	
+	public Node getSuccessor(Node one) throws JsonMappingException, JsonProcessingException {
+		String nodecmd = String.format("http://%s:%s/getSuccessor", one.getIpAddress(), one.getPort());
+		
+		RestTemplate restTemplate = new RestTemplate();
+		String result = restTemplate.getForObject(nodecmd, String.class);
+		Node newnode = new ObjectMapper().readValue(result, Node.class);
+		
+		return newnode;
+	}
+	
+	public ArrayList<Node> getFingerTable(Node one) {
+		
+		String nodecmd = String.format("http://%s:%s/getFingerTable", one.getIpAddress(), one.getPort());
+		
+		RestTemplate restTemplate = new RestTemplate();
+		ArrayList<Node> result = restTemplate.getForObject(nodecmd, ArrayList.class);
 		
 		return result;
 	}
 	
-	@GetMapping("/addtoring")
-	public String addToRing(@RequestParam List <String> nodeparam) {
-		Node newnode = new Node(nodeparam.get(0), nodeparam.get(1), Integer.parseInt(nodeparam.get(2)));
-		ring.join(newnode);
-		
-		// set successor and introducer
-		//thisnode.setSuccessor(ring.getIntroducer().getSuccessor());
-		
-		return String.format("%s with %s:%s has joined the ring", newnode.getNodeID(), newnode.getIpAddress(), newnode.getPort());
+	// find, findSuccessor, findClosestPrecedingNode, and isBetween have all been converted to RPC versions shown in Node.java
+	public Node find(Node nextNode, int key) throws JsonMappingException, JsonProcessingException {
+		int MAX_STEPS = 32;
+        // check if key is stored locally
+        if (key == nextNode.getNodeID()){
+            nextNode.setSuccessorFound(true);
+            System.out.println("Set Successor Found = True");
+        }
+    	int i = 0;
+    	while ((!nextNode.getSuccessorFound()) && (i < MAX_STEPS)) {
+            nextNode = findSuccessor(nextNode, key);
+            i++;
+    	}
+        
+    	if (nextNode.getSuccessorFound()) {
+            nextNode.setSuccessorFound(false); // return value to false for future lookups
+            return nextNode;
+    	}
+    	else {
+            System.out.println("Error with successor lookup.");
+            return null;
+    	}
 	}
+	
+	// returns node's successor or calls for search to continue on node's fingerTable
+    public Node findSuccessor(Node nextNode, int key) throws JsonMappingException, JsonProcessingException {
+        // if key is between the current node and the node's immediate successor, return immediate successor
+       if (isBetween(key, nextNode.getNodeID(), getSuccessor(nextNode).getNodeID())) {
+    	   getSuccessor(nextNode).setSuccessorFound(true);
+            return getSuccessor(nextNode); //RPC
+        }
+        // else, continue search in node's fingerTable
+        else {
+            return findClosestPrecedingNode(nextNode, key);
+        }
+    }
+    
+    public Node findClosestPrecedingNode(Node nextNode, int key) throws JsonMappingException, JsonProcessingException {
+    	
+    	int M = 7;
+    	
+        // if fingerTable's not yet initialized (ie with joining), skip below for loop
+        if (getFingerTable(nextNode).isEmpty() || getFingerTable(nextNode) == null){
+            return getSuccessor(nextNode); //RPC
+        }
+        // iterate through node's fingerTable
+        for (int i = M-1; i >= 0; i--) {
+            // if finger node is between current node and requested key, return finger node
+            if (getFingerTable(nextNode).get(i).getNodeID() == key){
+            	getFingerTable(nextNode).get(i).setSuccessorFound(true);
+                return getFingerTable(nextNode).get(i); //RPC
+            }
+            else if (isBetween(getFingerTable(nextNode).get(i).getNodeID(), nextNode.getNodeID(), key)) {
+                return getFingerTable(nextNode).get(i); //RPC
+            }   
+        }
+        // else, return node's successor
+        return getSuccessor(nextNode); //RPC
+    }
+    
+    // returns true if the key is between (start, end] range in the ring
+    public boolean isBetween(int target, int start, int end) {
+        if (start > end) {
+            return target > start || target <= end;
+        } else if (start < end) {
+            return target > start && target <= end;
+        } else {
+            return true;
+        }
+    }
+	
 }
