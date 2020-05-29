@@ -41,10 +41,21 @@ public class Node {
          *  TO DO: Node's fingerTable, predecessor, and successors and will be set by Joining
          *  function and then updated by Stabilization Protocol w/ every subsequent node join.
          */
-        this.fingerTable = new ArrayList<>(M); 
+        //this.fingerTable = new ArrayList<>(M); 
         this.successor = null;
         this.predecessor = null;
         this.successorFound = false;
+    }
+    
+    public Node(Node oldnode) {
+    	this.nodeID = oldnode.nodeID;
+    	this.ip_address = oldnode.ip_address;
+    	this.port = oldnode.port;
+    	this.fingerTable = new ArrayList(oldnode.getFingerTable());
+    	//this.successors = new ArrayList(oldnode.getSuccessors());
+    	this.successor = oldnode.getSuccessor();
+    	this.predecessor = oldnode.getPredecessor();
+    	this.successorFound = oldnode.getSuccessorFound();
     }
     
     public void setNodeID(int nodeID) {
@@ -69,15 +80,17 @@ public class Node {
         this.fingerTable = fingerTable;
     }
     public ArrayList<Node> getFingerTable(){
-    	//return this.fingerTable;
-    	return this.successors;
+    	return this.fingerTable;
+    	//return this.successors;
     }
     public void setSuccessor(Node successor){
     	this.successor = successor;
     }
+    /*
     public ArrayList<Node> getSuccessors(){
-    	return this.fingerTable;
-    }
+    	//return this.fingerTable;
+    	return this.successors;
+    }*/
     public Node getSuccessor(){
     	return this.successor;
     }
@@ -98,6 +111,12 @@ public class Node {
     public void addToFingerTable(String ip_address, String port, int bits) {
     	Node newnode = new Node(ip_address, port, bits);
     	
+    	if(this.fingerTable.size() < M) {
+    		this.getFingerTable().add(newnode);
+    	}
+    }
+    
+    public void addToFingerTable(Node newnode) {
     	if(this.fingerTable.size() < M) {
     		this.getFingerTable().add(newnode);
     	}

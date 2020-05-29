@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.coen317.node.property.FileStorageProperties;
 
+import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -68,12 +69,17 @@ public class NodeApplication {
         System.out.println("Introducer successor: "   + ring.getIntroducer().getSuccessor().getNodeID());
         System.out.println("Introducer predecessor: " + ring.getIntroducer().getPredecessor().getNodeID());
         
+        // JSON Object to String
+        System.out.println(N32.toString());
+        
         // Setup Fingertable for N32
         ArrayList<Node> fingerTable = new ArrayList<Node>();
         fingerTable.add(N40);
         fingerTable.add(N40);
         fingerTable.add(N40);
         fingerTable.add(N40);
+        fingerTable.add(N112);
+        fingerTable.add(N112);
         fingerTable.add(N112);
         N32.setFingerTable(fingerTable);
         
