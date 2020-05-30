@@ -3,48 +3,117 @@ package com.coen317.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.coen317.node.payload.UploadFileResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.coen317.node.service.FileStorageService;
 
 @RestController
 public class NodeController {
 	private static final String template = "Stored Content: %d %s";
-	
+
 	Node thisnode;
 	DHT ring;
-	
+
+	@Autowired
+	private FileStorageService fileStorageService;
+
 	@GetMapping("/initialize")
 	public String initialize() {
-		
+
 		int bits = 7;
 		String portnum = "8080";
 		String addr = null;
-		
+
 		try {
 			addr = getipAddress();
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		thisnode = new Node(addr, portnum, bits);
 		ring = new DHT(thisnode);
-		
+
 		return String.format("Node Initialized at %s:%s Node ID = %d", addr, portnum, thisnode.getNodeID());
 	}
-	
+
+	@PostMapping("/uploadFile2")
+	public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file) {
+		String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+		int key = Key.generate(fileName, 7);
+		Node uploadHere = find(thisnode, key);
+
+		if (uploadHere.getNodeID() == thisnode.getNodeID()) {
+			String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/downloadFile/")
+					.path(fileName).toUriString();
+
+			return new UploadFileResponse(fileName, fileDownloadUri, file.getContentType(), file.getSize());
+		} 
+		else {
+			// Redirect to uploadHere node
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+			String serverUrl = String.format("http://%s:%s/uploadFile2/", uploadHere.getIpAddress(),uploadHere.getPort());
+			MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+			try {
+				ByteArrayResource contentsAsResource = new ByteArrayResource(file.getBytes()) {
+					@Override
+					public String getFilename() {
+						return file.getOriginalFilename();
+					}
+				};
+				body.add("file", contentsAsResource);
+				RestTemplate restTemplate = new RestTemplate();
+				UploadFileResponse result = restTemplate.postForObject(serverUrl, body, UploadFileResponse.class);
+				return result;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+
+			// HttpEntity<MultiValueMap<String, Object>> requestEntity  = new HttpEntity<>(body, headers);
+			
+			
+			// String serverUrl = "http://localhost:8082/spring-rest/fileserver/singlefileupload/";
+			
+			// RestTemplate restTemplate = new RestTemplate();
+			// ResponseEntity<String> response = restTemplate
+			// .postForEntity(serverUrl, requestEntity, String.class);
+
+			// String uri = String.format("http://%s:%s/uploadFile", uploadHere.getIpAddress(),uploadHere.getPort());
+			// RestTemplate restTemplate = new RestTemplate();
+			// UploadFileResponse result = restTemplate.postForObject(uri, MultipartFile.class, UploadFileResponse.class, file);
+			// return result;
+		}
+		return null;
+    }
+
 	@GetMapping("/getthisnodeinfo")
 	public Node getthisnodeinfo() {
 		return thisnode;
